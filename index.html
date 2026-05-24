@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PDF Viewer &amp; Editor</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ── Toolbar ─────────────────────────────────────────────────── -->
+  <header class="toolbar">
+    <div class="tb-group">
+      <button class="btn btn-accent" id="btnOpen">&#128193; Open PDF</button>
+      <button class="btn"            id="btnSave"   disabled>&#128190; Save</button>
+      <button class="btn"            id="btnSaveAs" disabled>Save As&hellip;</button>
+      <input  type="file" id="fileInput" accept=".pdf" hidden />
+    </div>
+    <div class="tb-sep"></div>
+    <div class="tb-group">
+      <button class="btn icon" id="btnPrev" disabled title="Previous page (&#8592;)">&#9664;</button>
+      <span class="page-info" id="pageInfo">&#8212; / &#8212;</span>
+      <button class="btn icon" id="btnNext" disabled title="Next page (&#8594;)">&#9654;</button>
+    </div>
+    <div class="tb-sep"></div>
+    <div class="tb-group">
+      <button class="btn icon" id="btnZoomOut" disabled title="Zoom out (Ctrl -)">&#8722;</button>
+      <span class="zoom-label" id="zoomLabel">100%</span>
+      <button class="btn icon" id="btnZoomIn"  disabled title="Zoom in (Ctrl +)">&#43;</button>
+      <button class="btn"      id="btnFit"     disabled title="Fit page (Ctrl 0)">Fit</button>
+    </div>
+    <div class="tb-sep"></div>
+    <div class="tb-group">
+      <button class="btn" id="btnEdit" disabled title="Toggle edit mode (Ctrl E)">Edit Text</button>
+    </div>
+    <div class="tb-spacer"></div>
+    <span class="doc-name" id="docName">No file open</span>
+  </header>
+
+  <!-- ── Edit hint bar ───────────────────────────────────────────── -->
+  <div class="edit-bar hidden" id="editBar">
+    <span>
+      <strong>EDIT MODE</strong> &mdash;
+      Click text to edit &bull; Click empty area to add text &bull;
+      <kbd>Enter</kbd> apply &bull; <kbd>Esc</kbd> cancel &bull;
+      <kbd>Ctrl S</kbd> save
+    </span>
+    <button class="btn btn-sm" id="btnExitEdit">&#10005; Exit Edit Mode</button>
+  </div>
+
+  <!-- ── Main area ───────────────────────────────────────────────── -->
+  <main class="main" id="main">
+
+    <!-- Drop zone (shown when no PDF loaded) -->
+    <div class="drop-zone" id="dropZone">
+      <div class="drop-inner">
+        <div class="drop-icon">&#128196;</div>
+        <h2>Open a PDF file</h2>
+        <p>Click <strong>Open PDF</strong> in the toolbar or drag &amp; drop a file here</p>
+        <button class="btn btn-accent btn-lg"
+                onclick="document.getElementById('fileInput').click()">
+          Choose File
+        </button>
+        <p class="key-hints">
+          <kbd>Ctrl O</kbd> Open &nbsp;&#8226;&nbsp;
+          <kbd>Ctrl E</kbd> Edit mode &nbsp;&#8226;&nbsp;
+          <kbd>Ctrl S</kbd> Save
+        </p>
+      </div>
+    </div>
+
+    <!-- Viewer (hidden until PDF loaded) -->
+    <div class="viewer-area hidden" id="viewerArea">
+      <div class="page-scroll" id="pageScroll">
+        <div class="page-wrapper" id="pageWrapper">
+          <canvas id="pdfCanvas"></canvas>
+          <div class="text-layer" id="textLayer"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ── Status bar ──────────────────────────────────────────────── -->
+  <footer class="status-bar">
+    <span id="statusMsg">Open a PDF to get started</span>
+    <span class="badge badge-warn hidden" id="modBadge">Unsaved changes</span>
+  </footer>
+
+  <!-- ── Password modal ─────────────────────────────────────────── -->
+  <div class="overlay hidden" id="pwOverlay">
+    <div class="modal">
+      <div class="modal-hd">&#128274; Password Required</div>
+      <div class="modal-bd">
+        <p id="pwMsg">This PDF is password protected.<br>Enter the password to open it.</p>
+        <input type="password" class="text-input" id="pwInput"
+               placeholder="Password" autocomplete="off" />
+        <p class="error-msg hidden" id="pwErr">Incorrect password &mdash; please try again.</p>
+      </div>
+      <div class="modal-ft">
+        <button class="btn btn-accent" id="pwOk">Open</button>
+        <button class="btn"            id="pwCancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="app.js"></script>
+
+</body>
+</html>

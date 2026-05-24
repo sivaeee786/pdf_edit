@@ -1,0 +1,343 @@
+/* ── Reset & variables ───────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #1e1e2e;
+  --surface:   #2a2a3c;
+  --toolbar:   #252538;
+  --border:    #3a3a55;
+  --accent:    #4a90d9;
+  --accent-hv: #3a7bc8;
+  --danger:    #e05555;
+  --warn:      #f0a830;
+  --text:      #dde1f0;
+  --muted:     #7a7f9a;
+  --edit-hl:   rgba(74, 144, 217, 0.22);
+  --edit-bdr:  rgba(74, 144, 217, 0.65);
+  --input-bg:  #fffde8;
+  --input-bdr: #f0c030;
+  --radius:    6px;
+  --shadow:    0 4px 24px rgba(0,0,0,.45);
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.5 "Segoe UI", system-ui, sans-serif;
+  overflow: hidden;
+}
+
+/* ── App shell ───────────────────────────────────────────────────────────── */
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Toolbar ─────────────────────────────────────────────────────────────── */
+.toolbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 50px;
+  padding: 0 10px;
+  background: var(--toolbar);
+  border-bottom: 1px solid var(--border);
+  user-select: none;
+}
+
+.tb-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tb-sep {
+  width: 1px;
+  height: 26px;
+  background: var(--border);
+  margin: 0 6px;
+}
+
+.tb-spacer { flex: 1; }
+
+.doc-name {
+  color: var(--muted);
+  font-size: 12px;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  background: #3a3a55;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s, border-color .15s;
+}
+.btn:hover:not(:disabled) { background: #47475f; border-color: #5a5a7a; }
+.btn:active:not(:disabled) { background: #2e2e48; }
+.btn:disabled { opacity: .38; cursor: default; }
+
+.btn.icon { padding: 6px 10px; font-size: 12px; }
+.btn.active { background: var(--accent); border-color: var(--accent-hv); color: #fff; }
+.btn.active:hover:not(:disabled) { background: var(--accent-hv); }
+
+.btn-accent { background: var(--accent); border-color: var(--accent-hv); color: #fff; }
+.btn-accent:hover:not(:disabled) { background: var(--accent-hv); }
+
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+.btn-lg { padding: 10px 24px; font-size: 15px; }
+
+/* ── Edit bar ────────────────────────────────────────────────────────────── */
+.edit-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px;
+  background: #1a2a3a;
+  border-bottom: 1px solid #2a4a6a;
+  font-size: 13px;
+  color: #90c8f0;
+  gap: 12px;
+}
+.edit-bar kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  background: #0f1a26;
+  border: 1px solid #2a4a6a;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 11px;
+}
+
+/* ── Main ────────────────────────────────────────────────────────────────── */
+.main {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Drop zone ───────────────────────────────────────────────────────────── */
+.drop-zone {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  transition: background .2s;
+}
+.drop-zone.drag-over { background: #1a2535; }
+.drop-zone.drag-over .drop-inner {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(74,144,217,.25);
+}
+
+.drop-inner {
+  text-align: center;
+  padding: 48px 60px;
+  border: 2px dashed var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  transition: border-color .2s, box-shadow .2s;
+}
+.drop-icon { font-size: 56px; margin-bottom: 16px; }
+.drop-inner h2 { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
+.drop-inner p  { color: var(--muted); margin-bottom: 20px; }
+.key-hints { margin-top: 20px; color: var(--muted); font-size: 12px; }
+.key-hints kbd {
+  display: inline-block;
+  padding: 2px 7px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 11px;
+}
+
+/* ── Viewer ──────────────────────────────────────────────────────────────── */
+.viewer-area {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  background: #131320;
+}
+
+.page-scroll {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 20px;
+}
+
+.page-wrapper {
+  position: relative;
+  box-shadow: var(--shadow);
+  border-radius: 2px;
+  background: #fff;
+  line-height: 0;
+}
+
+#pdfCanvas {
+  display: block;
+  border-radius: 2px;
+}
+
+/* ── Text layer ──────────────────────────────────────────────────────────── */
+.text-layer {
+  position: absolute;
+  top: 0; left: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.text-layer.editable { pointer-events: all; }
+
+.text-item {
+  position: absolute;
+  color: transparent;
+  white-space: pre;
+  cursor: default;
+  transform-origin: left bottom;
+  line-height: 1;
+  border-radius: 2px;
+  transition: background .1s;
+}
+
+/* Hover highlight in edit mode */
+.text-layer.editable .text-item {
+  cursor: pointer;
+}
+.text-layer.editable .text-item:hover {
+  background: var(--edit-hl);
+  outline: 1px solid var(--edit-bdr);
+  color: rgba(0,0,0,.75);
+  z-index: 1;
+}
+
+/* ── Edit textarea input ─────────────────────────────────────────────────── */
+.edit-input {
+  position: absolute;
+  z-index: 10;
+  background: var(--input-bg);
+  color: #111;
+  border: 2px solid var(--input-bdr);
+  border-radius: 3px;
+  padding: 2px 5px;
+  line-height: 1.25;
+  resize: none;
+  outline: none;
+  font-family: Arial, sans-serif;
+  overflow: auto;          /* scroll inside the box, never expand */
+  box-shadow: 0 2px 14px rgba(0,0,0,.35);
+  min-width: 80px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.edit-input:focus { border-color: var(--accent); }
+
+/* ── Page nav info ───────────────────────────────────────────────────────── */
+.page-info  { min-width: 72px; text-align: center; font-size: 13px; color: var(--muted); }
+.zoom-label { min-width: 44px; text-align: center; font-size: 13px; color: var(--muted); }
+
+/* ── Status bar ──────────────────────────────────────────────────────────── */
+.status-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 26px;
+  padding: 0 12px;
+  background: #17172a;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.badge {
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.badge-warn { background: rgba(240,168,48,.18); color: var(--warn); border: 1px solid rgba(240,168,48,.35); }
+
+/* ── Modal ───────────────────────────────────────────────────────────────── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  width: 380px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.modal-hd {
+  padding: 18px 22px 12px;
+  font-size: 16px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+.modal-bd {
+  padding: 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.modal-bd p { color: var(--muted); font-size: 13px; line-height: 1.5; }
+.modal-ft {
+  display: flex;
+  gap: 10px;
+  padding: 12px 22px 18px;
+  border-top: 1px solid var(--border);
+}
+
+.text-input {
+  width: 100%;
+  padding: 8px 12px;
+  background: #1a1a2c;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border-color .15s;
+}
+.text-input:focus { border-color: var(--accent); }
+
+.error-msg {
+  color: var(--danger);
+  font-size: 12px;
+  background: rgba(224,85,85,.12);
+  border: 1px solid rgba(224,85,85,.3);
+  border-radius: 4px;
+  padding: 6px 10px;
+}
+
+/* ── Utilities ───────────────────────────────────────────────────────────── */
+.hidden { display: none !important; }
