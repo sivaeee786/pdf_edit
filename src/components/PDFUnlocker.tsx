@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import * as pdfjsLib from 'pdfjs-dist';
+import { decryptPDF } from '@pdfsmaller/pdf-decrypt';
 import { 
   ArrowLeft, Lock, Unlock, Key, Eye, EyeOff, 
   UploadCloud, FileText, CheckCircle2, AlertTriangle, 
@@ -20,6 +20,7 @@ export const PDFUnlocker: React.FC<PDFUnlockerProps> = ({ onBackToHome }) => {
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [isDragActive, setIsDragActive] = useState<boolean>(false);
   const [unlockedBlobUrl, setUnlockedBlobUrl] = useState<string | null>(null);
+  const [showPreview, setShowPreview] = useState<boolean>(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -76,18 +77,11 @@ export const PDFUnlocker: React.FC<PDFUnlockerProps> = ({ onBackToHome }) => {
     try {
       const fileBytes = new Uint8Array(await file.arrayBuffer());
       
-      // Load file into PDF.js with the user's password
-      const loadingTask = pdfjsLib.getDocument({ 
-        data: fileBytes, 
-        password: password 
-      });
-      const pdfDoc = await loadingTask.promise;
-
-      // Save the loaded document (this automatically strips out standard encryption keys!)
-      const decryptedBytes = await (pdfDoc as any).saveDocument();
+      // Decrypt PDF offline locally
+      const decryptedBytes = await decryptPDF(fileBytes, password);
 
       // Create downloadable blob
-      const blob = new Blob([decryptedBytes], { type: 'application/pdf' });
+      const blob = new Blob([decryptedBytes as any], { type: 'application/pdf' });
       const blobUrl = URL.createObjectURL(blob);
       
       setUnlockedBlobUrl(blobUrl);
@@ -96,16 +90,16 @@ export const PDFUnlocker: React.FC<PDFUnlockerProps> = ({ onBackToHome }) => {
       console.error('Decryption failed:', err);
       setStatus('error');
       
-      // Determine if error is password mismatch
       const msg = err.message || '';
-      const name = err.name || '';
       if (
-        name === 'PasswordException' || 
         msg.toLowerCase().includes('password') || 
+        msg.toLowerCase().includes('incorrect') || 
         msg.toLowerCase().includes('decrypt') || 
         msg.toLowerCase().includes('encrypt')
       ) {
         setErrorMessage('Incorrect password. Please verify the credentials and try again.');
+      } else if (msg.toLowerCase().includes('not encrypted')) {
+        setErrorMessage('This PDF document is already unlocked and not encrypted.');
       } else {
         setErrorMessage('Failed to decrypt the file. Ensure the PDF is not corrupted and matches standard password specifications.');
       }
@@ -117,6 +111,7 @@ export const PDFUnlocker: React.FC<PDFUnlockerProps> = ({ onBackToHome }) => {
     setPassword('');
     setStatus('idle');
     setErrorMessage('');
+    setShowPreview(false);
     if (unlockedBlobUrl) {
       URL.revokeObjectURL(unlockedBlobUrl);
       setUnlockedBlobUrl(null);
@@ -292,6 +287,24 @@ export const PDFUnlocker: React.FC<PDFUnlockerProps> = ({ onBackToHome }) => {
 
               {/* Action Buttons Block */}
               <div className="w-full flex flex-col gap-3 mt-2">
+                <button 
+                  onClick={() => setShowPreview(!showPreview)}
+                  className="w-full py-3 bg-slate-100 dark:bg-slate-900/60 hover:bg-slate-200/80 dark:hover:bg-slate-850 text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-2xl border border-slate-200 dark:border-border-dark flex items-center justify-center gap-2 cursor-pointer hover-scale"
+                >
+                  {showPreview ? <EyeOff size={14} /> : <Eye size={14} />}
+                  {showPreview ? 'Hide Document Preview' : 'Preview PDF Document'}
+                </button>
+
+                {showPreview && (
+                  <div className="w-full h-[320px] rounded-2xl overflow-hidden border border-slate-200 dark:border-border-dark shadow-inner mt-1 relative animate-fade-in bg-white dark:bg-slate-900">
+                    <iframe 
+                      src={unlockedBlobUrl} 
+                      className="w-full h-full border-none"
+                      title="PDF Preview"
+                    />
+                  </div>
+                )}
+
                 <a 
                   href={unlockedBlobUrl}
                   download={file.name.replace(/\.pdf$/i, '_unlocked.pdf')}
