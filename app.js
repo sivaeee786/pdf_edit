@@ -295,30 +295,35 @@ function paintOneEdit(ctx, viewport, edit) {
   const dpr = window.devicePixelRatio || 1;
 
   ctx.save();
-  // Restore to DPR-scaled space so all coords are in CSS pixels
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   const x   = edit.pdfX * s;
-  const yBL = viewport.height - edit.pdfY * s;   // text baseline, from canvas top (CSS px)
+  const yBL = viewport.height - edit.pdfY * s;   // baseline from canvas top (CSS px)
   const fs  = edit.fontSize * s;                  // font size in CSS px
-  const w   = edit.pdfW > 0
-    ? edit.pdfW * s + 4
-    : Math.max(edit.newText.length * fs * 0.6, 60);
 
-  // Erase the original text with a white rectangle
-  if (!edit.isNew) {
+  // Set font before measuring so metrics are accurate for this typeface
+  const fStyle = parseFontStyle(edit.fontName);
+  const weight = fStyle.bold   ? 'bold'   : 'normal';
+  const slant  = fStyle.italic ? 'italic' : 'normal';
+  const family = cssFontFamily(fStyle);
+  ctx.font     = `${slant} ${weight} ${fs}px ${family}`;
+
+  // Fixed-proportion erase rect: cap-height ≈ 0.72em, descender ≈ 0.20em.
+  // Avoids inflated metrics from diacritics (e.g. Á) that would push eraseH
+  // to ~1.2em — the same as normal line spacing — and bleed into adjacent lines.
+  const ascent  = fs * 0.78;
+  const descent = fs * 0.22;
+  const eraseH  = ascent + descent;   // = fs * 1.0, safely within line spacing
+
+  const eraseW  = edit.pdfW > 0 ? edit.pdfW * s + 2 : 0;
+
+  // Erase only the exact glyph bounding box — no bleeding into adjacent lines
+  if (!edit.isNew && eraseW > 0) {
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(x - 2, yBL - fs * 1.05, w + 4, fs * 1.35);
+    ctx.fillRect(x - 1, yBL - ascent, eraseW + 2, eraseH);
   }
 
-  // Build canvas font string matching the original font style
-  const fStyle   = parseFontStyle(edit.fontName);
-  const weight   = fStyle.bold   ? 'bold'   : 'normal';
-  const slant    = fStyle.italic ? 'italic' : 'normal';
-  const family   = cssFontFamily(fStyle);
-  ctx.font       = `${slant} ${weight} ${fs}px ${family}`;
-
-  // Use original text color (stored as "r,g,b")
+  // Paint replacement / new text
   const [cr, cg, cb] = (edit.color || '0,0,0').split(',').map(Number);
   ctx.fillStyle    = `rgb(${cr},${cg},${cb})`;
   ctx.textBaseline = 'alphabetic';
@@ -614,13 +619,17 @@ async function applyEdits() {
 
     const font = await getFont(edit.fontName);
 
-    // Erase original text with a white rectangle (skip for brand-new text)
+    // Erase original text with a white rectangle (skip for brand-new text).
+    // Height: ascent (~0.75em) + descent (~0.2em) + 2pt padding — matches the
+    // canvas overlay metrics so the saved PDF doesn't bleed into adjacent lines.
     if (!edit.isNew && edit.pdfW > 0) {
+      const eraseH = edit.fontSize * 0.95 + 2;
+      const eraseY = edit.pdfY - edit.fontSize * 0.2;
       page.drawRectangle({
         x:      edit.pdfX - 1,
-        y:      edit.pdfY - edit.fontSize * 0.18,
+        y:      eraseY,
         width:  edit.pdfW + 2,
-        height: edit.fontSize * 1.28,
+        height: eraseH,
         color:  rgb(1, 1, 1),
         borderWidth: 0,
       });
